@@ -1,0 +1,46 @@
+name: create-pages-site
+
+on:
+  workflow_dispatch:
+
+jobs:
+  generate:
+    name: Generate on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Generate Content
+        run: |
+          # mkdir
+          mkdir -p dist/gh-pages
+          # 
+          echo "Test" > dist/gh-pages/test.txt
+      - name: Upload Artifact
+        uses: actions/upload-pages-artifact@v1
+        with:
+          path: dist/gh-pages
+
+  deploy:
+    name: Deploy on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    needs: generate
+    concurrency:
+      group: ${{ github.ref }}
+      cancel-in-progress: true
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v1
